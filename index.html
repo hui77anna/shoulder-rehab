@@ -456,8 +456,7 @@ function renderToday(){
 
 /* ===================== RENDER: MOVES ===================== */
 function renderMoves(){
-  var html='<h2 class="sec">动作库 · '+EX.length+' 个动作</h2>'
-    +'<p style="font-size:12.5px;color:var(--ink3);margin:-6px 2px 14px;line-height:1.65;"><b style="color:var(--accent)">离线可看</b>：有本地真人片段的动作直接静音循环真人视频，其余暂用示意小人（都不需要联网）。往 <code>assets/clips/</code> 丢 <code>动作名.mp4</code> 即可把小人换成真人。联网时点 <b style="color:var(--accent)">▶ 真人教学</b> 还能看 B站 完整教学。</p>';
+  var html='<h2 class="sec">动作库 · '+EX.length+' 个动作</h2>';
   EX.forEach(function(ex){ html+=exCard(ex); });
   html+='<div style="height:10px"></div>';
   var m=document.getElementById('moves'); m.innerHTML=html;
