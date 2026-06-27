@@ -87,8 +87,7 @@
   .ex{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:14px;}
   .ex-fig{position:relative;background:#000;display:block;}
   .vstage{position:relative;min-height:120px;background:#000;overflow:hidden;}
-  .vstage > img.poster{display:block;width:100%;max-height:360px;object-fit:contain;background:#000;vertical-align:middle;}
-  .vstage > video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1;}
+  .vstage > img.figgif{display:block;width:100%;max-height:360px;object-fit:contain;background:#000 center/contain no-repeat;vertical-align:middle;}
   .vp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#cfe3df;background:#16302d;font-size:13px;font-weight:600;text-decoration:none;}
   .vp-ic{font-size:20px;opacity:.9;}
   .badge{
@@ -419,8 +418,8 @@ function exCard(ex){
   var done=!!(lsGet(checkKey(),{})[ex.id]);
   var chk='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2"><path d="M5 13l4 4L19 7"/></svg>';
   return '<div class="ex">'
-    +'<div class="ex-fig" data-fig="'+ex.id+'"><span class="badge">'+ex.badge+'</span>'
-    +'<div class="vstage"><img class="poster" loading="lazy" src="assets/posters/'+ex.id+'.jpg" alt="'+ex.name+'"></div></div>'
+    +'<div class="ex-fig"><span class="badge">'+ex.badge+'</span>'
+    +'<div class="vstage"><img class="figgif" loading="lazy" style="background-image:url(assets/posters/'+ex.id+'.jpg)" src="assets/gifs/'+ex.id+'.gif" alt="'+ex.name+'"></div></div>'
     +'<div class="ex-body">'
       +'<div class="ex-head"><div><div class="ex-name">'+ex.name+'</div><div class="ex-en">'+ex.en+'</div></div><div class="ex-dose">'+ex.dose+'</div></div>'
       +'<p class="ex-how">'+ex.how+'</p>'
@@ -482,7 +481,6 @@ var MSEGS=[
   {k:'3', label:'第 5–6 周'},
   {k:'4', label:'第 7–8 周'}
 ];
-var movesIO=null;
 function renderMoves(){
   // 顶部分栏：全部 / 各阶段（按周）
   var seg='<div class="segwrap">'+MSEGS.map(function(s){
@@ -525,42 +523,8 @@ function renderMoves(){
       b.querySelector('.db-txt').textContent=on?'已训练完成':'标记已完成';
     });
   });
-  // 每张卡常显「真人静帧海报」(秒加载、无图片数量限制)；只有滚到「屏幕中央」的卡才挂视频播放
-  // → 同时只解码 1–2 个视频，彻底避开 iOS「同时太多视频就不播」的硬上限
-  function focusCard(fig){
-    var stage=fig.querySelector('.vstage');
-    if(!stage || stage.querySelector('video.figvid')) return;
-    var id=fig.getAttribute('data-fig');
-    var v=document.createElement('video');
-    v.className='figvid'; v.muted=true; v.loop=true; v.preload='auto';
-    v.setAttribute('muted','');v.setAttribute('loop','');v.setAttribute('autoplay','');
-    v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
-    v.poster='assets/posters/'+id+'.jpg';
-    v.src='assets/clips/'+id+'.mp4';
-    // 多数素材是慢动作，提速循环让动作更自然有活力
-    var RATE=1.6;
-    function speed(){try{v.playbackRate=RATE;}catch(_){}}
-    v.addEventListener('loadedmetadata',speed);
-    v.addEventListener('play',speed);
-    v.addEventListener('ratechange',function(){if(Math.abs(v.playbackRate-RATE)>0.01){try{v.playbackRate=RATE;}catch(_){}}});
-    stage.appendChild(v);
-    try{ v.load(); }catch(e){}
-    speed();
-    var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});
-  }
-  function blurCard(fig){
-    var stage=fig.querySelector('.vstage');
-    var v=stage&&stage.querySelector('video.figvid');
-    if(v){ try{v.pause();}catch(_){} v.removeAttribute('src'); try{v.load();}catch(_){} v.remove(); }
-  }
-  // 只有进入屏幕中间 ~36% 带状区域的卡片才算「正在看」→ 通常只命中 1–2 张
-  if(movesIO){ try{movesIO.disconnect();}catch(_){} movesIO=null; }
-  movesIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
-    es.forEach(function(e){ if(e.isIntersecting) focusCard(e.target); else blurCard(e.target); });
-  },{rootMargin:'-32% 0px -32% 0px', threshold:0.01}):null;
-  m.querySelectorAll('.ex-fig').forEach(function(fig){
-    if(movesIO) movesIO.observe(fig); else focusCard(fig);
-  });
+  // 动作示范用「动图 GIF」当普通图片：手机上必然会动，无自动播放限制、无解码数量上限、
+  // 滚动不会被中断重来。loading=lazy 滑到哪张才下载哪张；下载前先用真人静帧海报做占位背景。
 }
 
 /* ===================== RENDER: PROGRESS ===================== */
