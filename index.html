@@ -86,6 +86,7 @@
   .ex-fig{position:relative;background:var(--figbg);display:block;}
   .vstage{position:relative;min-height:158px;display:flex;align-items:center;justify-content:center;background:var(--figbg);overflow:hidden;}
   .vstage > svg.fig{height:140px;width:auto;}
+  .vstage > video{display:none;}
   .vstage.isclip,.vstage.loaded{display:block;min-height:0;background:#000;}
   .vstage.isclip > svg.fig,.vstage.loaded > svg.fig{display:none;}
   .vstage.isclip > video{display:block;width:100%;max-height:360px;object-fit:contain;background:#000;}
@@ -494,22 +495,43 @@ function renderMoves(){
       }
     });
   });
-  // 本地真人片段：存在则离线静音循环，替换小人（assets/clips/<id>.mp4）
+  // 本地真人片段：进视口才在 DOM 里加载（iOS 必须进 DOM 才会加载视频；
+  // 懒加载 + 滚出暂停，避免一次 15 个视频把手机 Safari 卡死）
+  function loadClip(fig){
+    var stage=fig.querySelector('.vstage');
+    if(!stage || stage.classList.contains('isclip') || stage.getAttribute('data-tried')) return;
+    stage.setAttribute('data-tried','1');
+    var id=fig.getAttribute('data-fig');
+    var v=document.createElement('video');
+    v.muted=true; v.loop=true; v.preload='auto';
+    v.setAttribute('muted',''); v.setAttribute('loop',''); v.setAttribute('autoplay','');
+    v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+    v.src='assets/clips/'+id+'.mp4';
+    stage.insertBefore(v, stage.firstChild);   // 进 DOM，iOS 才会加载
+    var shown=false;
+    function reveal(){
+      if(shown) return; shown=true;
+      var svg=stage.querySelector('svg.fig'); if(svg) svg.remove();
+      var btn=stage.querySelector('.playbtn'); if(btn) btn.remove();
+      stage.classList.add('isclip');
+      var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});
+    }
+    v.addEventListener('loadeddata',reveal);
+    v.addEventListener('canplay',reveal);
+    v.addEventListener('error',function(){ v.remove(); stage.removeAttribute('data-tried'); });
+    try{ v.load(); }catch(e){}
+  }
+  var clipIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      var v=e.target.querySelector('.vstage > video');
+      if(e.isIntersecting){ loadClip(e.target); if(v){var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});} }
+      else if(v){ try{v.pause();}catch(_){} }
+    });
+  },{rootMargin:'200px'}):null;
   EX.forEach(function(ex){
     var fig=m.querySelector('.ex-fig[data-fig="'+ex.id+'"]');
     if(!fig) return;
-    var stage=fig.querySelector('.vstage');
-    var probe=document.createElement('video');
-    probe.muted=true; probe.loop=true; probe.autoplay=true; probe.preload='metadata';
-    probe.setAttribute('muted',''); probe.setAttribute('playsinline',''); probe.setAttribute('webkit-playsinline','');
-    probe.src='assets/clips/'+ex.id+'.mp4';
-    probe.addEventListener('loadeddata',function(){
-      // 有真人动图的卡片：只留视频，去掉「真人教学」按钮
-      stage.innerHTML=''; stage.appendChild(probe);
-      stage.classList.add('isclip');
-      if(probe.play){var p=probe.play();if(p&&p.catch)p.catch(function(){});}
-    });
-    probe.addEventListener('error',function(){ /* 离线/无片段 → 保留示意小人 */ });
+    if(clipIO) clipIO.observe(fig); else loadClip(fig);
   });
 }
 
