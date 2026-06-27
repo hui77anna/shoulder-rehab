@@ -124,6 +124,17 @@
   .donebtn.on .db-box{background:var(--ok);border-color:var(--ok);}
   .donebtn.on .db-box svg{opacity:1;transform:scale(1);}
 
+  /* ---- moves filter segmented ---- */
+  .segwrap{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    margin:0 -16px 4px;padding:2px 16px 6px;scrollbar-width:none;}
+  .segwrap::-webkit-scrollbar{display:none;}
+  .seg{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink2);
+    border-radius:20px;padding:8px 15px;font-size:13px;font-weight:600;font-family:inherit;
+    cursor:pointer;white-space:nowrap;transition:transform .08s,background .15s,color .15s,border-color .15s;}
+  .seg:active{transform:scale(.96);}
+  .seg.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .seghint{font-size:12.5px;color:var(--ink3);margin:0 2px 14px;line-height:1.5;}
+
   /* ---- progress ---- */
   .form{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:6px;}
   .field{margin-bottom:15px;}
@@ -463,11 +474,46 @@ function renderToday(){
 }
 
 /* ===================== RENDER: MOVES ===================== */
+var MFILTER='all';
+var MSEGS=[
+  {k:'all',label:'全部'},
+  {k:'1', label:'第 1–2 周'},
+  {k:'2', label:'第 3–4 周'},
+  {k:'3', label:'第 5–6 周'},
+  {k:'4', label:'第 7–8 周'}
+];
+var movesIO=null;
 function renderMoves(){
-  var html='<h2 class="sec">动作库 · '+EX.length+' 个动作</h2>';
-  EX.forEach(function(ex){ html+=exCard(ex); });
+  // 顶部分栏：全部 / 各阶段（按周）
+  var seg='<div class="segwrap">'+MSEGS.map(function(s){
+    return '<button class="seg'+(MFILTER===s.k?' on':'')+'" data-seg="'+s.k+'">'+s.label+'</button>';
+  }).join('')+'</div>';
+
+  var ids, head, hint='';
+  if(MFILTER==='all'){
+    ids=EX.map(function(e){return e.id;});
+    head='动作库 · '+EX.length+' 个动作';
+  }else{
+    var P=PHASE[MFILTER];
+    ids=P.list.slice();
+    head=P.week+' · 阶段 '+MFILTER+' · '+ids.length+' 个动作';
+    hint='目标：'+P.goal+'　🎾 '+P.serve;
+  }
+
+  var html=seg+'<h2 class="sec" style="margin-top:14px">'+head+'</h2>';
+  if(hint) html+='<div class="seghint">'+hint+'</div>';
+  ids.forEach(function(id){ html+=exCard(EXMAP[id]); });
   html+='<div style="height:10px"></div>';
   var m=document.getElementById('moves'); m.innerHTML=html;
+
+  // 分栏点击 → 切换筛选重渲染
+  m.querySelectorAll('.seg').forEach(function(b){
+    b.addEventListener('click',function(){
+      var k=b.getAttribute('data-seg');
+      if(k===MFILTER) return;
+      MFILTER=k; window.scrollTo(0,0); renderMoves();
+    });
+  });
   // 每个动作卡片的「已训练完成」打勾（和今日打卡共用同一份记录）
   m.querySelectorAll('.donebtn').forEach(function(b){
     b.addEventListener('click',function(){
@@ -508,13 +554,12 @@ function renderMoves(){
     if(v){ try{v.pause();}catch(_){} v.removeAttribute('src'); try{v.load();}catch(_){} v.remove(); }
   }
   // 只有进入屏幕中间 ~36% 带状区域的卡片才算「正在看」→ 通常只命中 1–2 张
-  var focusIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
+  if(movesIO){ try{movesIO.disconnect();}catch(_){} movesIO=null; }
+  movesIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting) focusCard(e.target); else blurCard(e.target); });
   },{rootMargin:'-32% 0px -32% 0px', threshold:0.01}):null;
-  EX.forEach(function(ex){
-    var fig=m.querySelector('.ex-fig[data-fig="'+ex.id+'"]');
-    if(!fig) return;
-    if(focusIO) focusIO.observe(fig); else focusCard(fig);
+  m.querySelectorAll('.ex-fig').forEach(function(fig){
+    if(movesIO) movesIO.observe(fig); else focusCard(fig);
   });
 }
 
