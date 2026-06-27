@@ -83,13 +83,12 @@
 
   /* ---- exercise card ---- */
   .ex{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:14px;}
-  .ex-fig{position:relative;background:var(--figbg);display:block;}
-  .vstage{position:relative;min-height:158px;display:flex;align-items:center;justify-content:center;background:var(--figbg);overflow:hidden;}
-  .vstage > svg.fig{height:140px;width:auto;}
-  .vstage > video{display:none;}
-  .vstage.isclip,.vstage.loaded{display:block;min-height:0;background:#000;}
-  .vstage.isclip > svg.fig,.vstage.loaded > svg.fig{display:none;}
-  .vstage.isclip > video{display:block;width:100%;max-height:360px;object-fit:contain;background:#000;}
+  .ex-fig{position:relative;background:#000;display:block;}
+  .vstage{position:relative;min-height:158px;background:#000;overflow:hidden;}
+  .vstage > video.figvid{display:block;width:100%;max-height:360px;object-fit:contain;background:#000;vertical-align:middle;}
+  .figcover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--figbg);z-index:2;}
+  .figcover > svg.fig{height:140px;width:auto;}
+  .vstage.isclip .figcover{display:none;}
   .vp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#cfe3df;background:#16302d;font-size:13px;font-weight:600;text-decoration:none;}
   .vp-ic{font-size:20px;opacity:.9;}
   .badge{
@@ -97,7 +96,7 @@
     font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;border:1px solid var(--accent-soft);
   }
   .playbtn{
-    position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;
+    position:absolute;bottom:12px;right:12px;z-index:3;display:flex;align-items:center;gap:6px;
     background:rgba(26,40,42,.82);color:#fff;border:none;border-radius:20px;
     padding:8px 14px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
     backdrop-filter:blur(4px);transition:transform .08s;
@@ -403,7 +402,7 @@ function exCard(ex){
   var chk='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2"><path d="M5 13l4 4L19 7"/></svg>';
   return '<div class="ex">'
     +'<div class="ex-fig" data-fig="'+ex.id+'"><span class="badge">'+ex.badge+'</span>'
-    +'<div class="vstage">'+figure(ex)+'<button class="playbtn" data-vid="'+ex.id+'"><span class="pt-ic">▶</span>真人教学</button></div></div>'
+    +'<div class="vstage"><video class="figvid" muted loop autoplay playsinline webkit-playsinline preload="none"></video><div class="figcover">'+figure(ex)+'</div><button class="playbtn" data-vid="'+ex.id+'"><span class="pt-ic">▶</span>真人教学</button></div></div>'
     +'<div class="ex-body">'
       +'<div class="ex-head"><div><div class="ex-name">'+ex.name+'</div><div class="ex-en">'+ex.en+'</div></div><div class="ex-dose">'+ex.dose+'</div></div>'
       +'<p class="ex-how">'+ex.how+'</p>'
@@ -500,31 +499,25 @@ function renderMoves(){
   function loadClip(fig){
     var stage=fig.querySelector('.vstage');
     if(!stage || stage.classList.contains('isclip') || stage.getAttribute('data-tried')) return;
+    var v=stage.querySelector('video.figvid'); if(!v) return;
     stage.setAttribute('data-tried','1');
     var id=fig.getAttribute('data-fig');
-    var v=document.createElement('video');
-    v.muted=true; v.loop=true; v.preload='auto';
-    v.setAttribute('muted',''); v.setAttribute('loop',''); v.setAttribute('autoplay','');
-    v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
-    v.src='assets/clips/'+id+'.mp4';
-    stage.insertBefore(v, stage.firstChild);   // 进 DOM，iOS 才会加载
-    var shown=false;
     function reveal(){
-      if(shown) return; shown=true;
-      var svg=stage.querySelector('svg.fig'); if(svg) svg.remove();
+      if(stage.classList.contains('isclip')) return;
+      stage.classList.add('isclip');                 // 撤掉小人盖板，露出视频
       var btn=stage.querySelector('.playbtn'); if(btn) btn.remove();
-      stage.classList.add('isclip');
       var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});
     }
     v.addEventListener('loadeddata',reveal);
     v.addEventListener('canplay',reveal);
-    v.addEventListener('error',function(){ v.remove(); stage.removeAttribute('data-tried'); });
+    v.addEventListener('error',function(){ stage.removeAttribute('data-tried'); }); // 加载失败保留小人
+    v.src='assets/clips/'+id+'.mp4';                 // video 元素本就在 DOM 且 display:block，iOS 会加载
     try{ v.load(); }catch(e){}
   }
   var clipIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
     es.forEach(function(e){
-      var v=e.target.querySelector('.vstage > video');
-      if(e.isIntersecting){ loadClip(e.target); if(v){var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});} }
+      var v=e.target.querySelector('video.figvid');
+      if(e.isIntersecting){ loadClip(e.target); if(v&&v.src){var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});} }
       else if(v){ try{v.pause();}catch(_){} }
     });
   },{rootMargin:'200px'}):null;
