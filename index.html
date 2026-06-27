@@ -89,6 +89,7 @@
   .figcover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--figbg);z-index:2;}
   .figcover > svg.fig{height:140px;width:auto;}
   .vstage.isclip .figcover{display:none;}
+  .vstage.isclip .playbtn{display:none;}
   .vp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#cfe3df;background:#16302d;font-size:13px;font-weight:600;text-decoration:none;}
   .vp-ic{font-size:20px;opacity:.9;}
   .badge{
@@ -402,7 +403,7 @@ function exCard(ex){
   var chk='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2"><path d="M5 13l4 4L19 7"/></svg>';
   return '<div class="ex">'
     +'<div class="ex-fig" data-fig="'+ex.id+'"><span class="badge">'+ex.badge+'</span>'
-    +'<div class="vstage"><video class="figvid" muted loop autoplay playsinline webkit-playsinline preload="none"></video><div class="figcover">'+figure(ex)+'</div><button class="playbtn" data-vid="'+ex.id+'"><span class="pt-ic">▶</span>真人教学</button></div></div>'
+    +'<div class="vstage"><div class="figcover">'+figure(ex)+'</div><button class="playbtn" data-vid="'+ex.id+'"><span class="pt-ic">▶</span>真人教学</button></div></div>'
     +'<div class="ex-body">'
       +'<div class="ex-head"><div><div class="ex-name">'+ex.name+'</div><div class="ex-en">'+ex.en+'</div></div><div class="ex-dose">'+ex.dose+'</div></div>'
       +'<p class="ex-how">'+ex.how+'</p>'
@@ -496,31 +497,34 @@ function renderMoves(){
   });
   // 本地真人片段：进视口才在 DOM 里加载（iOS 必须进 DOM 才会加载视频；
   // 懒加载 + 滚出暂停，避免一次 15 个视频把手机 Safari 卡死）
-  function loadClip(fig){
+  // 进视口才创建 video，滚出视口就销毁 —— 同时存活的 video 永远只有两三个，避开 iOS 视频数量上限
+  function mountClip(fig){
     var stage=fig.querySelector('.vstage');
-    if(!stage || stage.classList.contains('isclip') || stage.getAttribute('data-tried')) return;
-    var v=stage.querySelector('video.figvid'); if(!v) return;
-    stage.setAttribute('data-tried','1');
+    if(!stage || stage.querySelector('video.figvid')) return;   // 已挂载
     var id=fig.getAttribute('data-fig');
-    function reveal(){
-      if(stage.classList.contains('isclip')) return;
-      stage.classList.add('isclip');                 // 撤掉小人盖板，露出视频
-      var btn=stage.querySelector('.playbtn'); if(btn) btn.remove();
-      var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});
-    }
+    var v=document.createElement('video');
+    v.className='figvid';
+    v.muted=true; v.loop=true; v.preload='auto';
+    v.setAttribute('muted','');v.setAttribute('loop','');v.setAttribute('autoplay','');
+    v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
+    function reveal(){ stage.classList.add('isclip'); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){}); }
     v.addEventListener('loadeddata',reveal);
     v.addEventListener('canplay',reveal);
-    v.addEventListener('error',function(){ stage.removeAttribute('data-tried'); }); // 加载失败保留小人
-    v.src='assets/clips/'+id+'.mp4';                 // video 元素本就在 DOM 且 display:block，iOS 会加载
+    v.addEventListener('error',function(){ /* 加载失败保留小人 */ });
+    v.src='assets/clips/'+id+'.mp4';
+    stage.insertBefore(v, stage.firstChild);
     try{ v.load(); }catch(e){}
   }
+  function unmountClip(fig){
+    var stage=fig.querySelector('.vstage');
+    var v=stage&&stage.querySelector('video.figvid');
+    if(v){ try{v.pause();}catch(_){} v.removeAttribute('src'); try{v.load();}catch(_){} v.remove(); }
+    if(stage) stage.classList.remove('isclip');   // 露回小人盖板
+  }
   var clipIO=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
-    es.forEach(function(e){
-      var v=e.target.querySelector('video.figvid');
-      if(e.isIntersecting){ loadClip(e.target); if(v&&v.src){var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});} }
-      else if(v){ try{v.pause();}catch(_){} }
-    });
-  },{rootMargin:'200px'}):null;
+    es.forEach(function(e){ if(e.isIntersecting) mountClip(e.target); else unmountClip(e.target); });
+  },{rootMargin:'300px'}):null;
+  function loadClip(fig){ mountClip(fig); }
   EX.forEach(function(ex){
     var fig=m.querySelector('.ex-fig[data-fig="'+ex.id+'"]');
     if(!fig) return;
