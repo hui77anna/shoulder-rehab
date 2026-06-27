@@ -643,16 +643,29 @@ function renderMoves(){
 var ROMLV=['做不到 / 离墙多','能贴墙一部分','大部分能贴墙','全程贴墙'];
 function dnum(ds){var a=ds.split('-');return new Date(+a[0],+a[1]-1,+a[2]).getTime();}
 function mdfmt(ds){var a=ds.split('-');return (+a[1])+'/'+(+a[2]);}
-// 好转自测：最新一次 vs 一周前，逐项判断 好转/持平/退步
+// 好转自测：以「第一次记录」为基线，锻炼满一周后才对比，逐项判断 好转/持平/退步
 function selfTestHtml(logs){
-  if(logs.length<2){
-    return '<div class="cmp-empty"><b>好转自测怎么用</b><br>每周固定一天，用下面的表格重测一次'
-      +'（发球疼痛 / 连续发球数 / 活动度 / 次日恢复）。记满两次后，这里会自动拿最新一次和一周前对比，'
-      +'告诉你每项有没有好转。'+(logs.length?'　已记录 1 次，再记一次就能看对比。':'')+'</div>';
+  var todayMs=dnum(todayISO());
+  // 0 次：先记基线
+  if(logs.length===0){
+    return '<div class="cmp-empty"><b>好转自测怎么用</b><br>今天先用下面的表格记一次「基线」'
+      +'（发球疼痛 / 连续发球数 / 活动度 / 次日恢复）。锻炼<b>满一周</b>后再重测一次，'
+      +'这里会自动对比基线，告诉你练得有没有效。</div>';
+  }
+  var base=logs[0];
+  var elapsed=Math.floor((todayMs-dnum(base.date))/86400000);
+  // 不满一周：累积中，给倒计时（康复看周不看天，避免太早下结论误导）
+  if(elapsed<7){
+    return '<div class="cmp-empty"><b>好转自测 · 累积中</b><br>基线已记录（'+mdfmt(base.date)+'）。'
+      +'康复<b>看周不看天</b>，锻炼满一周再看效果才准。<br>还差 <b>'+(7-elapsed)+' 天</b>到第一次对比 —— '
+      +'这几天照常打卡、按计划练就好。</div>';
   }
   var latest=logs[logs.length-1];
-  var target=dnum(latest.date)-7*86400000, base=logs[0];
-  for(var i=0;i<logs.length-1;i++){ if(dnum(logs[i].date)<=target) base=logs[i]; }
+  // 满一周但还没复测（只有基线那一条）：提示今天复测
+  if(latest.date===base.date){
+    return '<div class="cmp-empty"><b>好转自测 · 该复测了</b><br>距基线（'+mdfmt(base.date)+'）已经 <b>'
+      +elapsed+' 天</b>。今天用下面的表格<b>重测一次</b>，这里就会和基线对比，看这一周练得有没有效。</div>';
+  }
   var span=Math.round((dnum(latest.date)-dnum(base.date))/86400000);
   var metrics=[
     {k:'pain', name:'发球疼痛', better:'down'},
@@ -686,8 +699,8 @@ function selfTestHtml(logs){
   if(up>down && up>=1){ vcls='good'; vtxt='✅ 总体在好转 —— '+up+' 项进步'+(down?'、'+down+' 项暂时退步':'')+'。保持这个节奏，别急着加力。'; }
   else if(down>up){ vcls='bad'; vtxt='⚠️ '+down+' 项退步、'+up+' 项进步。最近是不是练多了、或发球加太快？回到上一阶段强度，疼就减量。'; }
   else { vcls='flat'; vtxt='➖ 基本持平。康复有平台期很正常，继续记录，重点看「次日恢复」这项。'; }
-  return '<div class="cmp"><h3>好转自测 · 对比一周前</h3>'
-    +'<div class="cmp-sub">'+mdfmt(base.date)+' → '+mdfmt(latest.date)+'　间隔 '+span+' 天</div>'
+  return '<div class="cmp"><h3>好转自测 · 对比锻炼前</h3>'
+    +'<div class="cmp-sub">'+mdfmt(base.date)+' 基线 → '+mdfmt(latest.date)+'　锻炼 '+span+' 天</div>'
     +rows
     +'<div class="cmp-verdict '+vcls+'">'+vtxt+'</div></div>';
 }
