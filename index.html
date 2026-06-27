@@ -491,8 +491,15 @@ function renderMoves(){
     v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');
     v.poster='assets/posters/'+id+'.jpg';
     v.src='assets/clips/'+id+'.mp4';
+    // 多数素材是慢动作，提速循环让动作更自然有活力
+    var RATE=1.6;
+    function speed(){try{v.playbackRate=RATE;}catch(_){}}
+    v.addEventListener('loadedmetadata',speed);
+    v.addEventListener('play',speed);
+    v.addEventListener('ratechange',function(){if(Math.abs(v.playbackRate-RATE)>0.01){try{v.playbackRate=RATE;}catch(_){}}});
     stage.appendChild(v);
     try{ v.load(); }catch(e){}
+    speed();
     var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){});
   }
   function blurCard(fig){
