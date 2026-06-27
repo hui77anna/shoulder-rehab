@@ -166,6 +166,13 @@
   .ph-body ul{margin:0 0 4px;padding-left:18px;}
   .ph-body li{font-size:13.5px;color:var(--ink);margin-bottom:5px;}
   .ph-body .serve{margin-top:11px;font-size:13px;background:var(--warm-soft);color:#9A5A28;border-radius:11px;padding:9px 12px;}
+  .diag{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;}
+  .diag h3{margin:0 0 12px;font-size:15px;}
+  .diag ul{margin:0 0 14px;padding-left:18px;}
+  .diag li{font-size:13.5px;color:var(--ink);margin-bottom:5px;}
+  .diag .goal-line{background:var(--accent-soft);border-radius:12px;padding:11px 13px;font-size:13.5px;color:var(--p4);line-height:1.6;}
+  .diag .goal-line b{color:var(--p4);}
+  .diag .dnote{font-size:12.5px;color:var(--ink3);line-height:1.65;margin:11px 0 0;}
   .baseline{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px;}
   .baseline h3{margin:0 0 4px;font-size:15px;}
   .baseline .sub{font-size:12px;color:var(--ink3);margin-bottom:14px;}
@@ -341,13 +348,13 @@ var PHASE = {
      list:['foam','wallangel','pushupplus','sleeper','crossbody'],
      serve:'暂停大力发球、扣杀、过顶推举', stop:true},
   2:{week:'第 3–4 周', goal:'建立肩袖力量', color:'var(--p2)',
-     list:['foam','wallangel','sleeper','crossbody','bandER','facepull','yraise','traise'],
+     list:['foam','wallangel','pushupplus','sleeper','crossbody','bandER','facepull','yraise','traise'],
      serve:'开始 50% 力量发球 · 每周 1–2 次'},
   3:{week:'第 5–6 周', goal:'回归网球专项', color:'var(--p3)',
      list:['wallangel','sleeper','bandER','facepull','er90','farmer','landmine'],
      serve:'70–80% 力量发球'},
   4:{week:'第 7–8 周', goal:'全力发球', color:'var(--p4)',
-     list:['sleeper','facepull','bandER','er90','yraise','traise','wraise','medball','shadowserve'],
+     list:['facepull','bandER','er90','yraise','traise','wraise','medball','shadowserve'],
      serve:'逐步恢复 100% 力量发球'}
 };
 
@@ -596,7 +603,11 @@ function ind(t,x){return '<div class="ind"><div class="it">'+t+'</div><div class
 
 /* ===================== RENDER: PLAN ===================== */
 function renderPlan(){
-  var html='<div class="startcard"><label>开始日期</label>'
+  var html='<div class="diag"><h3>你的情况</h3>'
+    +'<ul><li>MRI 提示双侧肩峰撞击</li><li>网球发球后疼痛</li><li>有头前倾倾向</li><li>长期办公</li><li>疑似肱骨前移</li><li>疑似肩后囊紧张（拉伸后舒服很像这个问题）</li></ul>'
+    +'<div class="goal-line"><b>目标</b>：8 周内恢复无痛发球，并建立长期不复发的肩部机制。</div>'
+    +'<p class="dnote">综合判断：约 70–80% 把握是「肩峰撞击 + 肩后囊紧张（网球肩）」，不只是单纯肩袖无力 —— 这种康复通常比真正的肩袖撕裂快得多，8 周看到明显改善是现实目标。</p></div>';
+  html+='<div class="startcard"><label>开始日期</label>'
     +'<input id="startInput" type="date" value="'+getStart()+'">'
     +'<p>改这里会重新对齐「第几天 / 第几周 / 阶段」。今天是第 '+dayNum()+' 天。</p></div>';
 
