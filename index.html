@@ -751,7 +751,7 @@ function selfTestHtml(logs){
   // 满一周但还没复测（只有基线那一条）：提示今天复测
   if(latest.date===base.date){
     return '<div class="cmp-empty"><b>好转自测 · 该复测了 🔔</b><br>距基线（'+mdfmt(base.date)+'）已经 <b>'
-      +elapsed+' 天</b>，满一周了！按下面「记录今天」<b>重测一次</b>（点开有量法图解），填完就能和基线对比看效果。</div>';
+      +elapsed+' 天</b>，满一周了！按下面「记录本周自测」<b>重测一次</b>（点开有量法图解），填完就能和基线对比看效果。</div>';
   }
   var span=Math.round((dnum(latest.date)-dnum(base.date))/86400000);
   var metrics=[
@@ -803,7 +803,7 @@ function selfTestState(logs){
 }
 // 历史记录（紧凑）：每行只显两个量化项，主观四项收进「展开详情」
 function historyRows(logs){
-  if(!logs.length) return '<div class="empty">还没有记录，点下面「记录今天」填一次。</div>';
+  if(!logs.length) return '<div class="empty">还没有记录，点下面「记录本周自测」填第一次（基线）。</div>';
   var h='';
   logs.slice().reverse().forEach(function(l,i){
     var idx=logs.length-1-i;
@@ -826,9 +826,9 @@ function historyRows(logs){
 // 记录今天：默认折叠；「该复测了」时自动展开。看图自测收进表单底部。
 function recordForm(open){
   return '<details class="recform"'+(open?' open':'')+'>'
-    +'<summary class="recsum"><span class="rc-ic">＋</span> 记录今天的数据</summary>'
+    +'<summary class="recsum"><span class="rc-ic">＋</span> 记录本周自测数据</summary>'
     +'<div class="form">'
-      +'<div class="qhint">📏 前两项是<b>可量化测量</b>，每周固定一天、同样姿势量，对比最准。</div>'
+      +'<div class="qhint">📏 这是<b>每周一次</b>的自测（不用天天填）。前两项是可量化测量，固定同一天、同样姿势量，对比最准。</div>'
       +'<div class="field"><label>背后手指间距 <span>Apley · 一手过肩 + 一手从下背后够，量指尖距离（cm），越小越好</span></label><input id="pApley" type="number" min="0" step="0.5" inputmode="decimal" placeholder="cm，约 10 → 目标 2–3"></div>'
       +'<div class="field"><label>肩外旋角度 <span>平躺、上臂外展 90° 肘屈 90°，前臂向后倒，量角度（°），越大越好</span></label><input id="pEr" type="number" min="0" max="180" inputmode="numeric" placeholder="°，&lt;70 受限 → 目标 &gt;90"></div>'
       +'<div class="field"><label>发球疼痛评分 <span>0 不疼 · 10 不敢发</span></label><input id="pPain" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
