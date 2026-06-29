@@ -169,6 +169,9 @@
     font-family:inherit;background:#FAFCFB;color:var(--ink);appearance:none;
   }
   .field input:focus,.field select:focus{outline:none;border-color:var(--accent);}
+  .qhint{font-size:12.5px;color:var(--p4);background:var(--accent-soft);border-radius:12px;
+    padding:10px 12px;margin-bottom:15px;line-height:1.55;}
+  .qhint b{color:var(--p4);}
   .btn{
     width:100%;background:var(--accent);color:#fff;border:none;border-radius:13px;padding:13px;
     font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:transform .08s;
@@ -668,6 +671,8 @@ function selfTestHtml(logs){
   }
   var span=Math.round((dnum(latest.date)-dnum(base.date))/86400000);
   var metrics=[
+    {k:'apley',name:'背后手指间距', better:'down', unit:' cm'},
+    {k:'erdeg',name:'肩外旋角度', better:'up', unit:'°'},
     {k:'pain', name:'发球疼痛', better:'down'},
     {k:'serve',name:'连续发球数', better:'up', unit:' 个'},
     {k:'rom',  name:'肩关节活动度', better:'up', rom:true},
@@ -709,6 +714,9 @@ function renderProgress(){
   var html='<h2 class="sec">好转自测</h2>'+selfTestHtml(logs)
     +'<h2 class="sec">记录今天</h2>'
     +'<div class="form">'
+      +'<div class="qhint">📏 下面两项是<b>可量化测量</b>，每周固定一天、用同样姿势量，对比最准。</div>'
+      +'<div class="field"><label>背后手指间距 <span>Apley · 一手过肩 + 一手从下背后够，量指尖距离（cm），越小越好</span></label><input id="pApley" type="number" min="0" step="0.5" inputmode="decimal" placeholder="cm，约 10 → 目标 2–3"></div>'
+      +'<div class="field"><label>肩外旋角度 <span>平躺、上臂外展 90° 肘屈 90°，前臂向后倒，量角度（°），越大越好</span></label><input id="pEr" type="number" min="0" max="180" inputmode="numeric" placeholder="°，&lt;70 受限 → 目标 &gt;90"></div>'
       +'<div class="field"><label>发球疼痛评分 <span>0 不疼 · 10 不敢发</span></label><input id="pPain" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
       +'<div class="field"><label>连续发球数 <span>发到第几个开始疼</span></label><input id="pServe" type="number" min="0" inputmode="numeric" placeholder="个"></div>'
       +'<div class="field"><label>肩关节活动度（墙天使）</label><select id="pRom"><option value="">选择…</option><option>做不到 / 离墙多</option><option>能贴墙一部分</option><option>大部分能贴墙</option><option>全程贴墙</option></select></div>'
@@ -723,6 +731,8 @@ function renderProgress(){
     logs.slice().reverse().forEach(function(l,i){
       var idx=logs.length-1-i;
       html+='<div class="logrow"><div class="ld">'+l.date+'</div>'
+        +(l.apley!==''&&l.apley!=null?'<div class="lstat">间距 <b>'+l.apley+'</b> cm</div>':'')
+        +(l.erdeg!==''&&l.erdeg!=null?'<div class="lstat">外旋 <b>'+l.erdeg+'</b>°</div>':'')
         +(l.pain!==''&&l.pain!=null?'<div class="lstat">疼痛 <b>'+l.pain+'</b></div>':'')
         +(l.serve!==''&&l.serve!=null?'<div class="lstat">连续 <b>'+l.serve+'</b></div>':'')
         +(l.rom?'<div class="lstat">活动度 <b style="font-size:13px">'+l.rom+'</b></div>':'')
@@ -732,7 +742,9 @@ function renderProgress(){
     });
   }
 
-  html+='<h2 class="sec">4 个关键指标怎么看</h2>'
+  html+='<h2 class="sec">指标怎么看</h2>'
+    +ind('📏 背后手指间距（Apley）','可量化：一手过肩往下、一手从下背后往上够，量两手指尖距离。约 10cm <span class="ar">→</span> 第4周目标 2–3cm（甚至摸到）。左右各量、固定姿势。')
+    +ind('📐 肩外旋角度','可量化：平躺，上臂贴床外展 90°、肘屈 90°，前臂向后倒到底，量前臂与竖直方向的角度。<70° 受限 <span class="ar">→</span> 目标 >90°。')
     +ind('① 疼痛评分','发球疼痛逐周下降：第1周 6/10 <span class="ar">→</span> 第4周 3/10 <span class="ar">→</span> 第8周 0–1/10。')
     +ind('② 连续发球数','现在约 20 个就开始疼 <span class="ar">→</span> 目标 100 个不疼。')
     +ind('③ 肩关节活动度','墙天使从「贴不上墙」 <span class="ar">→</span> 慢慢能全程贴墙。')
@@ -747,11 +759,13 @@ function renderProgress(){
 
   document.getElementById('saveLog').addEventListener('click',function(){
     var rec={date:todayISO(),
+      apley:document.getElementById('pApley').value,
+      erdeg:document.getElementById('pEr').value,
       pain:document.getElementById('pPain').value,
       serve:document.getElementById('pServe').value,
       rom:document.getElementById('pRom').value,
       next:document.getElementById('pNext').value};
-    if(rec.pain===''&&rec.serve===''&&rec.rom===''&&rec.next===''){return;}
+    if(rec.apley===''&&rec.erdeg===''&&rec.pain===''&&rec.serve===''&&rec.rom===''&&rec.next===''){return;}
     var L=lsGet('srLog',[]);
     // 同一天覆盖
     L=L.filter(function(x){return x.date!==rec.date;});
