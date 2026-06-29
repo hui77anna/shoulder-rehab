@@ -244,6 +244,22 @@
     margin-top:6px;font-size:13px;color:var(--ink2);line-height:1.7;}
   .cmp-empty b{color:var(--ink);}
 
+  /* ---- self-test visual guide ---- */
+  .guide{margin-top:12px;border:1px solid var(--line);border-radius:14px;background:#FAFCFB;padding:0 14px;}
+  .guide summary{list-style:none;cursor:pointer;font-size:13px;font-weight:700;color:var(--p4);padding:13px 0;}
+  .guide summary::-webkit-details-marker{display:none;}
+  .guide[open] summary{border-bottom:1px solid var(--line);}
+  .gtests{display:flex;flex-direction:column;gap:16px;padding:14px 0;}
+  .gtest .gfig{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:12px;}
+  .gtest .gn{font-size:13.5px;font-weight:700;margin:11px 0 3px;}
+  .gtest .gd{font-size:12.5px;color:var(--ink2);line-height:1.6;}
+  .gtest .gd b{color:var(--p4);}
+  .gtest .gtarget{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);
+    background:var(--accent-soft);border-radius:20px;padding:4px 10px;margin-top:8px;}
+  .gmeasure{font-size:12px;color:var(--ink2);background:var(--accent-soft);border-radius:12px;
+    padding:10px 12px;line-height:1.65;margin-bottom:14px;}
+  .gmeasure b{color:var(--p4);}
+
   /* ---- metrics explain ---- */
   .ind{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:9px;}
   .ind .it{font-size:14px;font-weight:700;}
@@ -646,14 +662,57 @@ function renderMoves(){
 var ROMLV=['做不到 / 离墙多','能贴墙一部分','大部分能贴墙','全程贴墙'];
 function dnum(ds){var a=ds.split('-');return new Date(+a[0],+a[1]-1,+a[2]).getTime();}
 function mdfmt(ds){var a=ds.split('-');return (+a[1])+'/'+(+a[2]);}
+// 自测示意图（自绘 SVG，无版权、离线可显示）
+function svgApley(){
+  return '<svg class="gfig" viewBox="0 0 220 185" xmlns="http://www.w3.org/2000/svg">'
+    +'<circle cx="110" cy="28" r="16" fill="var(--body-h)"/>'
+    +'<path d="M64 56 Q110 44 156 56 L139 152 Q110 162 81 152 Z" fill="var(--body)"/>'
+    +'<line x1="110" y1="60" x2="110" y2="146" stroke="#fff" stroke-width="2" stroke-dasharray="4 5" opacity="0.6"/>'
+    +'<polyline points="152,60 176,44 117,88" fill="none" stroke="var(--limb)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<polyline points="80,128 54,142 103,108" fill="none" stroke="var(--limb)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<line x1="117" y1="88" x2="103" y2="108" stroke="var(--spicy)" stroke-width="2.5" stroke-dasharray="3 3"/>'
+    +'<circle cx="117" cy="88" r="3.2" fill="var(--spicy)"/><circle cx="103" cy="108" r="3.2" fill="var(--spicy)"/>'
+    +'<text x="126" y="103" font-size="13" font-weight="700" fill="var(--spicy)" font-family="inherit">间距</text>'
+    +'</svg>';
+}
+function svgER(){
+  return '<svg class="gfig" viewBox="0 0 220 165" xmlns="http://www.w3.org/2000/svg">'
+    +'<rect x="12" y="124" width="196" height="13" rx="4" fill="var(--figbg)"/>'
+    +'<circle cx="40" cy="112" r="12" fill="var(--body-h)"/>'
+    +'<line x1="52" y1="118" x2="150" y2="118" stroke="var(--limb)" stroke-width="11" stroke-linecap="round"/>'
+    +'<circle cx="150" cy="118" r="5.5" fill="var(--limb-d)"/>'
+    +'<line x1="150" y1="118" x2="150" y2="58" stroke="var(--ink3)" stroke-width="3" stroke-dasharray="4 5" opacity="0.55"/>'
+    +'<text x="156" y="56" font-size="11" fill="var(--ink3)" font-family="inherit">起始</text>'
+    +'<line x1="150" y1="118" x2="108" y2="66" stroke="var(--accent)" stroke-width="11" stroke-linecap="round"/>'
+    +'<circle cx="108" cy="66" r="6" fill="var(--limb-d)"/>'
+    +'<path d="M150 84 A 34 34 0 0 0 128 94" fill="none" stroke="var(--accent)" stroke-width="2.5"/>'
+    +'<text x="80" y="90" font-size="12" font-weight="700" fill="var(--accent)" font-family="inherit">角度</text>'
+    +'</svg>';
+}
+function selfTestGuide(open){
+  return '<details class="guide"'+(open?' open':'')+'>'
+    +'<summary>📷 怎么自己量这两项（点开看图）</summary>'
+    +'<div class="gtests">'
+      +'<div class="gtest">'+svgApley()
+        +'<div class="gn">① 背后手指间距（Apley）</div>'
+        +'<div class="gd">一手过肩往下、一手从下背后往上够，量两手指尖的距离。手在背后看不到 → 用<b>手机定时拍后背</b>、或找人帮量。</div>'
+        +'<span class="gtarget">越小越好 · 约 10cm → 目标 2–3cm</span></div>'
+      +'<div class="gtest">'+svgER()
+        +'<div class="gn">② 肩外旋角度</div>'
+        +'<div class="gd">平躺，上臂外展 90°、肘屈 90°，前臂向后倒到底。把<b>手机平放在前臂上</b>，开 iPhone「测量 → 水平仪」直接读角度。</div>'
+        +'<span class="gtarget">越大越好 · &lt;70° 受限 → 目标 &gt;90°</span></div>'
+    +'</div>'
+    +'<div class="gmeasure">📏 <b>每周固定一天、同样姿势量</b>，数字才可比。量完填到下面「记录今天」，满一周自动对比。</div>'
+    +'</details>';
+}
 // 好转自测：以「第一次记录」为基线，锻炼满一周后才对比，逐项判断 好转/持平/退步
 function selfTestHtml(logs){
   var todayMs=dnum(todayISO());
   // 0 次：先记基线
   if(logs.length===0){
     return '<div class="cmp-empty"><b>好转自测怎么用</b><br>今天先用下面的表格记一次「基线」'
-      +'（发球疼痛 / 连续发球数 / 活动度 / 次日恢复）。锻炼<b>满一周</b>后再重测一次，'
-      +'这里会自动对比基线，告诉你练得有没有效。</div>';
+      +'（背后手指间距 / 肩外旋角度 / 发球疼痛 / 连续发球数…）。锻炼<b>满一周</b>后再重测一次，'
+      +'这里会自动对比基线，告诉你练得有没有效。</div>'+selfTestGuide(false);
   }
   var base=logs[0];
   var elapsed=Math.floor((todayMs-dnum(base.date))/86400000);
@@ -661,13 +720,14 @@ function selfTestHtml(logs){
   if(elapsed<7){
     return '<div class="cmp-empty"><b>好转自测 · 累积中</b><br>基线已记录（'+mdfmt(base.date)+'）。'
       +'康复<b>看周不看天</b>，锻炼满一周再看效果才准。<br>还差 <b>'+(7-elapsed)+' 天</b>到第一次对比 —— '
-      +'这几天照常打卡、按计划练就好。</div>';
+      +'这几天照常打卡、按计划练就好。</div>'+selfTestGuide(false);
   }
   var latest=logs[logs.length-1];
   // 满一周但还没复测（只有基线那一条）：提示今天复测
   if(latest.date===base.date){
-    return '<div class="cmp-empty"><b>好转自测 · 该复测了</b><br>距基线（'+mdfmt(base.date)+'）已经 <b>'
-      +elapsed+' 天</b>。今天用下面的表格<b>重测一次</b>，这里就会和基线对比，看这一周练得有没有效。</div>';
+    return '<div class="cmp-empty"><b>好转自测 · 该复测了 🔔</b><br>距基线（'+mdfmt(base.date)+'）已经 <b>'
+      +elapsed+' 天</b>，满一周了！照下面的图<b>重测一次</b>，量完填到「记录今天」，就能和基线对比看效果。</div>'
+      +selfTestGuide(true);
   }
   var span=Math.round((dnum(latest.date)-dnum(base.date))/86400000);
   var metrics=[
@@ -707,7 +767,8 @@ function selfTestHtml(logs){
   return '<div class="cmp"><h3>好转自测 · 对比锻炼前</h3>'
     +'<div class="cmp-sub">'+mdfmt(base.date)+' 基线 → '+mdfmt(latest.date)+'　锻炼 '+span+' 天</div>'
     +rows
-    +'<div class="cmp-verdict '+vcls+'">'+vtxt+'</div></div>';
+    +'<div class="cmp-verdict '+vcls+'">'+vtxt+'</div></div>'
+    +selfTestGuide(false);
 }
 function renderProgress(){
   var logs=lsGet('srLog',[]);
