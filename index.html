@@ -753,8 +753,8 @@ function selfTestGuide(open){
         +'<span class="gtarget">越小越好 · 约 10cm → 目标 2–3cm</span></div>'
       +'<div class="gtest"><img class="gfig" loading="lazy" src="assets/guide/er.jpg" alt="肩外旋角度测量示意">'
         +'<div class="gn">② 肩外旋角度</div>'
-        +'<div class="gd">平躺，上臂外展 90°、肘屈 90°，前臂向后倒到底。把<b>手机平放在前臂上</b>，开 iPhone「测量 → 水平仪」直接读角度。</div>'
-        +'<span class="gtarget">越大越好 · &lt;70° 受限 → 目标 &gt;90°</span></div>'
+        +'<div class="gd">侧躺、患肩在上，手肘贴住身体、屈肘 90°，前臂从肚子前向上转到最大。把<b>手机平放在前臂上</b>，开 iPhone「测量 → 水平仪」读角度。</div>'
+        +'<span class="gtarget">越大越好 · 每周同姿势量、看角度变大</span></div>'
     +'</div>'
     +'<div class="gmeasure">📏 <b>每周固定一天、同样姿势量</b>，数字才可比。量完填到下面「记录今天」，满一周自动对比。</div>'
     +'</details>';
@@ -881,7 +881,7 @@ function detailForm(){
     +'<div class="form">'
       +'<div class="qhint">📏 这是<b>每周一次</b>的自测（不用天天填）。前两项是可量化测量，固定同一天、同样姿势量，对比最准。</div>'
       +'<div class="field"><label>背后手指间距 <span>Apley · 一手过肩 + 一手从下背后够，量指尖距离（cm），越小越好</span></label><input id="pApley" type="number" min="0" step="0.5" inputmode="decimal" placeholder="cm，约 10 → 目标 2–3"></div>'
-      +'<div class="field"><label>肩外旋角度 <span>平躺、上臂外展 90° 肘屈 90°，前臂向后倒，量角度（°），越大越好</span></label><input id="pEr" type="number" min="0" max="180" inputmode="numeric" placeholder="°，&lt;70 受限 → 目标 &gt;90"></div>'
+      +'<div class="field"><label>肩外旋角度 <span>侧躺、患肩在上，肘贴身屈 90°，前臂向上转，量角度（°），越大越好</span></label><input id="pEr" type="number" min="0" max="180" inputmode="numeric" placeholder="° · 每周同姿势量、看变大"></div>'
       +'<div class="field"><label>发球疼痛评分 <span>0 不疼 · 10 不敢发</span></label><input id="pPain" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
       +'<div class="field"><label>连续发球数 <span>发到第几个开始疼</span></label><input id="pServe" type="number" min="0" inputmode="numeric" placeholder="个"></div>'
       +'<div class="field"><label>肩关节活动度（墙天使）</label><select id="pRom"><option value="">选择…</option><option>做不到 / 离墙多</option><option>能贴墙一部分</option><option>大部分能贴墙</option><option>全程贴墙</option></select></div>'
@@ -963,7 +963,7 @@ function renderPlan(){
 
   html+='<h2 class="sec">指标怎么看</h2>'
     +ind('📏 背后手指间距（Apley）','可量化：一手过肩往下、一手从下背后往上够，量两手指尖距离。约 10cm <span class="ar">→</span> 第4周目标 2–3cm（甚至摸到）。左右各量、固定姿势。')
-    +ind('📐 肩外旋角度','可量化：平躺，上臂贴床外展 90°、肘屈 90°，前臂向后倒到底，量前臂与竖直方向的角度。<70° 受限 <span class="ar">→</span> 目标 >90°。')
+    +ind('📐 肩外旋角度','可量化：侧躺、患肩在上，手肘贴住身体、屈肘 90°，前臂从肚子前向上转到最大，量前臂与水平面的角度。越大越好，每周固定同姿势量、看角度变大。')
     +ind('① 疼痛评分','发球疼痛逐周下降：第1周 6/10 <span class="ar">→</span> 第4周 3/10 <span class="ar">→</span> 第8周 0–1/10。')
     +ind('② 连续发球数','现在约 20 个就开始疼 <span class="ar">→</span> 目标 100 个不疼。')
     +ind('③ 肩关节活动度','墙天使从「贴不上墙」 <span class="ar">→</span> 慢慢能全程贴墙。')
