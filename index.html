@@ -624,8 +624,12 @@ function renderToday(){
     +'<div class="goal">目标：'+P.goal+'</div>'
     +streakTxt+'</div></div>';
 
-  if(needWeeklyTest()){
-    html+='<div class="wtbanner" id="wtBanner">🔔 本周该自测了 · 30 秒看看有没有好转<span class="wtb-go">去自测 ›</span></div>';
+  var srLogs=lsGet('srLog',[]);
+  if(needWeeklyTest(srLogs)){
+    var btxt=srLogs.length
+      ? '🔔 本周该自测了 · 30 秒看看有没有好转'      // 已有基线、满一周 → 复测看好转
+      : '🎯 先花 30 秒记个基线 · 之后才能看好转';     // 还没基线 → 先记基线
+    html+='<div class="wtbanner" id="wtBanner">'+btxt+'<span class="wtb-go">去自测 ›</span></div>';
   }
 
   html+=calendar(days);
