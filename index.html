@@ -12,7 +12,7 @@
   :root{
     --bg:#EEF2F1; --card:#FFFFFF; --ink:#1C2B2E; --ink2:#5B6E72; --ink3:#93A2A4;
     --line:#E4EAE9; --accent:#2E8B7F; --accent-soft:#E2F0ED; --warm:#E08A4E;
-    --warm-soft:#FBEEE2; --ok:#3DA17A;
+    --warm-soft:#FBEEE2; --ok:#3DA17A; --error:#C0392B; --spicy:#D94F3D;
     --body:#C6D4D6; --body-h:#B2C4C6; --limb:#2E6B7E; --limb-d:#214E5C;
     --figbg:#F1F7F6;
     --p1:#7BB0A8; --p2:#4F8F86; --p3:#2E8B7F; --p4:#1F6E63;
@@ -211,6 +211,26 @@
   .lr-sec{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);}
   .lr-sec .lstat{font-size:13px;color:var(--ink2);}
   .lr-sec .lstat b{color:var(--ink);}
+  /* weekly one-tap self-test */
+  .weektest{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:6px;}
+  .wt-q{font-size:15px;font-weight:700;margin-bottom:14px;}
+  .wt-q span{font-size:12px;font-weight:500;color:var(--ink3);margin-left:8px;}
+  .wt-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .wt-chip{border:1px solid var(--line);background:#FAFCFB;color:var(--ink);border-radius:13px;
+    padding:15px 4px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+    transition:transform .08s,background .15s,border-color .15s,color .15s;}
+  .wt-chip:active{transform:scale(.95);}
+  .wt-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .recsum-sm{background:transparent !important;color:var(--accent) !important;border:none !important;
+    justify-content:flex-start !important;padding:14px 2px 2px !important;font-size:13px !important;margin:8px 0 0 !important;}
+  /* today self-test reminder banner */
+  .wtbanner{display:flex;align-items:center;gap:10px;background:var(--warm-soft);border:1px solid #F1DAC4;
+    border-radius:16px;padding:13px 16px;margin-top:14px;font-size:13.5px;font-weight:600;color:#9A5A28;cursor:pointer;}
+  .wtbanner .wtb-go{margin-left:auto;color:var(--accent);white-space:nowrap;}
+  /* progress tab red dot */
+  .tab{position:relative;}
+  .tab.hasdot::after{content:'';position:absolute;top:1px;right:calc(50% - 19px);width:8px;height:8px;
+    border-radius:50%;background:var(--error);border:1.5px solid var(--card);}
   .gird{background:var(--accent-soft);border:1px solid #CBE3DE;border-radius:18px;padding:16px 18px;margin-top:8px;}
   .gird h3{margin:0 0 8px;font-size:14px;color:var(--p4);}
   .gird p{margin:0;font-size:13px;color:#2C4A46;line-height:1.65;}
@@ -604,6 +624,10 @@ function renderToday(){
     +'<div class="goal">目标：'+P.goal+'</div>'
     +streakTxt+'</div></div>';
 
+  if(needWeeklyTest()){
+    html+='<div class="wtbanner" id="wtBanner">🔔 本周该自测了 · 30 秒看看有没有好转<span class="wtb-go">去自测 ›</span></div>';
+  }
+
   html+=calendar(days);
   html+='<h2 class="sec">今天要做</h2>';
   P.list.forEach(function(id){
@@ -625,6 +649,11 @@ function renderToday(){
       dd[id]=!dd[id]; lsSet(checkKey(),dd);
       renderToday();
     });
+  });
+  var wb=document.getElementById('wtBanner');
+  if(wb) wb.addEventListener('click',function(){
+    document.querySelector('.tab[data-tab="progress"]').click();
+    var w=document.querySelector('#progress .weektest'); if(w) w.scrollIntoView({block:'center'});
   });
 }
 
@@ -735,9 +764,8 @@ function selfTestHtml(logs){
   var todayMs=dnum(todayISO());
   // 0 次：先记基线
   if(logs.length===0){
-    return '<div class="cmp-empty"><b>好转自测怎么用</b><br>今天先用下面的表格记一次「基线」'
-      +'（背后手指间距 / 肩外旋角度 / 发球疼痛 / 连续发球数…）。锻炼<b>满一周</b>后再重测一次，'
-      +'这里会自动对比基线，告诉你练得有没有效。</div>';
+    return '<div class="cmp-empty"><b>好转自测怎么用</b><br>今天先在下面「本周自测」点一下「这周发球还疼吗」记个基线。'
+      +'锻炼<b>满一周</b>后再点一次，这里会自动对比，告诉你练得有没有效。（想记更细可展开「想记更细」）</div>';
   }
   var base=logs[0];
   var elapsed=Math.floor((todayMs-dnum(base.date))/86400000);
@@ -808,11 +836,11 @@ function historyRows(logs){
   logs.slice().reverse().forEach(function(l,i){
     var idx=logs.length-1-i;
     var prim='';
+    if(l.pain!==''&&l.pain!=null) prim+='<span class="lstat">疼痛 <b>'+l.pain+'</b></span>';
     if(l.apley!==''&&l.apley!=null) prim+='<span class="lstat">间距 <b>'+l.apley+'</b> cm</span>';
     if(l.erdeg!==''&&l.erdeg!=null) prim+='<span class="lstat">外旋 <b>'+l.erdeg+'</b>°</span>';
-    if(!prim) prim='<span class="lstat" style="color:var(--ink3)">无量化项</span>';
+    if(!prim) prim='<span class="lstat" style="color:var(--ink3)">无记录</span>';
     var sec='';
-    if(l.pain!==''&&l.pain!=null) sec+='<span class="lstat">疼痛 <b>'+l.pain+'</b></span>';
     if(l.serve!==''&&l.serve!=null) sec+='<span class="lstat">连续 <b>'+l.serve+'</b></span>';
     if(l.rom) sec+='<span class="lstat">活动度 <b>'+l.rom+'</b></span>';
     if(l.next!==''&&l.next!=null) sec+='<span class="lstat">次日 <b>'+l.next+'</b></span>';
@@ -823,10 +851,33 @@ function historyRows(logs){
   });
   return h;
 }
-// 记录今天：默认折叠；「该复测了」时自动展开。看图自测收进表单底部。
-function recordForm(open){
-  return '<details class="recform"'+(open?' open':'')+'>'
-    +'<summary class="recsum"><span class="rc-ic">＋</span> 记录本周自测数据</summary>'
+// 是否到了「该自测」的时候：没记录过、或距上次满 7 天
+function needWeeklyTest(logs){
+  logs=logs||lsGet('srLog',[]);
+  if(!logs.length) return true;
+  return Math.floor((dnum(todayISO())-dnum(logs[logs.length-1].date))/86400000)>=7;
+}
+function updateTabDot(){
+  var t=document.querySelector('.tab[data-tab="progress"]');
+  if(t) t.classList.toggle('hasdot',needWeeklyTest());
+}
+// 每周一键自测：这周疼不疼，点一下就存
+function weekTestCard(logs){
+  var today=todayISO();
+  var todayRec=logs.filter(function(l){return l.date===today;})[0];
+  var cur=(todayRec&&todayRec.pain!==''&&todayRec.pain!=null)?+todayRec.pain:null;
+  var chips=[[0,'不疼'],[3,'轻微'],[6,'明显'],[9,'不敢发']];
+  var ch=chips.map(function(c){return '<button class="wt-chip'+(cur===c[0]?' on':'')+'" data-pain="'+c[0]+'">'+c[1]+'</button>';}).join('');
+  return '<div class="weektest">'
+    +'<div class="wt-q">这周发球还疼吗？<span>'+(cur!==null?'已记录 · 点别的可改':'点一下就行，不用打字')+'</span></div>'
+    +'<div class="wt-chips">'+ch+'</div>'
+    +detailForm()
+    +'</div>';
+}
+// 想记更细：完整 6 项 + 看图量法，默认折叠（绝大多数人用不到）
+function detailForm(){
+  return '<details class="recform">'
+    +'<summary class="recsum recsum-sm">想记更细（手指间距 / 外旋角度 / 活动度…）▸</summary>'
     +'<div class="form">'
       +'<div class="qhint">📏 这是<b>每周一次</b>的自测（不用天天填）。前两项是可量化测量，固定同一天、同样姿势量，对比最准。</div>'
       +'<div class="field"><label>背后手指间距 <span>Apley · 一手过肩 + 一手从下背后够，量指尖距离（cm），越小越好</span></label><input id="pApley" type="number" min="0" step="0.5" inputmode="decimal" placeholder="cm，约 10 → 目标 2–3"></div>'
@@ -835,19 +886,30 @@ function recordForm(open){
       +'<div class="field"><label>连续发球数 <span>发到第几个开始疼</span></label><input id="pServe" type="number" min="0" inputmode="numeric" placeholder="个"></div>'
       +'<div class="field"><label>肩关节活动度（墙天使）</label><select id="pRom"><option value="">选择…</option><option>做不到 / 离墙多</option><option>能贴墙一部分</option><option>大部分能贴墙</option><option>全程贴墙</option></select></div>'
       +'<div class="field"><label>第二天肩膀评分 <span>次日恢复，越低越好</span></label><input id="pNext" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
-      +'<button class="btn" id="saveLog">保存今天的记录</button>'
-      +selfTestGuide(open)
+      +'<button class="btn" id="saveLog">保存这次自测</button>'
+      +selfTestGuide(false)
     +'</div></details>';
 }
 function renderProgress(){
   var logs=lsGet('srLog',[]);
-  var due=selfTestState(logs)==='due';
   var html='<h2 class="sec">好转自测</h2>'+selfTestHtml(logs);
-
-  html+='<h2 class="sec">历史记录</h2>'+historyRows(logs)
-    +'<div style="height:6px"></div>'+recordForm(due)+'<div style="height:10px"></div>';
+  html+='<h2 class="sec">本周自测</h2>'+weekTestCard(logs);
+  html+='<h2 class="sec">历史记录</h2>'+historyRows(logs)+'<div style="height:10px"></div>';
 
   document.getElementById('progress').innerHTML=html;
+
+  // 一键自测：这周疼不疼，点一下存（只更新当天 pain，保留其它已填项）
+  document.querySelectorAll('#progress .wt-chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      var p=b.getAttribute('data-pain'), t=todayISO();
+      var L=lsGet('srLog',[]);
+      var ex=L.filter(function(x){return x.date===t;})[0];
+      if(ex){ ex.pain=p; }
+      else { L.push({date:t,apley:'',erdeg:'',pain:p,serve:'',rom:'',next:''}); }
+      L.sort(function(a,b){return a.date<b.date?-1:1;});
+      lsSet('srLog',L); renderProgress(); updateTabDot();
+    });
+  });
 
   document.getElementById('saveLog').addEventListener('click',function(){
     var rec={date:todayISO(),
@@ -862,11 +924,11 @@ function renderProgress(){
     // 同一天覆盖
     L=L.filter(function(x){return x.date!==rec.date;});
     L.push(rec); L.sort(function(a,b){return a.date<b.date?-1:1;});
-    lsSet('srLog',L); renderProgress();
+    lsSet('srLog',L); renderProgress(); updateTabDot();
   });
   document.querySelectorAll('#progress [data-del]').forEach(function(b){
     b.addEventListener('click',function(){
-      var i=+b.getAttribute('data-del'); var L=lsGet('srLog',[]); L.splice(i,1); lsSet('srLog',L); renderProgress();
+      var i=+b.getAttribute('data-del'); var L=lsGet('srLog',[]); L.splice(i,1); lsSet('srLog',L); renderProgress(); updateTabDot();
     });
   });
 }
@@ -931,7 +993,7 @@ function renderPlan(){
 function test(t,d){return '<div class="test"><div class="tn">'+t+'</div><div class="td">'+d+'</div></div>';}
 
 /* ===================== NAV ===================== */
-function renderAll(){renderToday();renderMoves();renderProgress();renderPlan();updateTopMeta();}
+function renderAll(){renderToday();renderMoves();renderProgress();renderPlan();updateTopMeta();updateTabDot();}
 function updateTopMeta(){document.getElementById('topMeta').textContent='第 '+dayNum()+' 天 · 阶段 '+phaseNum();}
 function syncMovesDone(){
   var dd=lsGet(checkKey(),{});
