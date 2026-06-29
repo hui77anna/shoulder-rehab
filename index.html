@@ -186,6 +186,31 @@
   .logrow .lstat{font-size:13px;}
   .logrow .lstat b{color:var(--accent);font-size:15px;}
   .empty{text-align:center;color:var(--ink3);font-size:13px;padding:24px 0;}
+  /* collapsible record form */
+  .recform{margin-top:0;}
+  .recform>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--accent);color:#fff;border-radius:13px;padding:13px;font-size:15px;font-weight:600;transition:transform .08s;}
+  .recform>summary::-webkit-details-marker{display:none;}
+  .recform>summary:active{transform:scale(.98);}
+  .recform>summary .rc-ic{font-size:18px;line-height:1;transition:transform .2s;}
+  .recform[open]>summary{background:#FAFCFB;color:var(--ink2);border:1px solid var(--line);margin-bottom:12px;}
+  .recform[open]>summary .rc-ic{transform:rotate(45deg);}
+  .recform .form{margin-top:0;}
+  .recform .form .qhint{margin-top:0;}
+  /* compact history row */
+  .logrow2{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:12px 14px;margin-bottom:9px;}
+  .lr-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .lr-top .ld{font-size:12px;color:var(--ink3);font-weight:600;}
+  .lr-top .lstat{font-size:13px;color:var(--ink2);}
+  .lr-top .lstat b{color:var(--accent);font-size:15px;}
+  .lr-del{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--ink3);
+    border-radius:8px;padding:5px 11px;font-size:12px;font-family:inherit;cursor:pointer;}
+  .lr-more{margin-top:9px;}
+  .lr-more>summary{list-style:none;cursor:pointer;font-size:12px;color:var(--accent);font-weight:600;}
+  .lr-more>summary::-webkit-details-marker{display:none;}
+  .lr-sec{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);}
+  .lr-sec .lstat{font-size:13px;color:var(--ink2);}
+  .lr-sec .lstat b{color:var(--ink);}
   .gird{background:var(--accent-soft);border:1px solid #CBE3DE;border-radius:18px;padding:16px 18px;margin-top:8px;}
   .gird h3{margin:0 0 8px;font-size:14px;color:var(--p4);}
   .gird p{margin:0;font-size:13px;color:#2C4A46;line-height:1.65;}
@@ -712,7 +737,7 @@ function selfTestHtml(logs){
   if(logs.length===0){
     return '<div class="cmp-empty"><b>好转自测怎么用</b><br>今天先用下面的表格记一次「基线」'
       +'（背后手指间距 / 肩外旋角度 / 发球疼痛 / 连续发球数…）。锻炼<b>满一周</b>后再重测一次，'
-      +'这里会自动对比基线，告诉你练得有没有效。</div>'+selfTestGuide(false);
+      +'这里会自动对比基线，告诉你练得有没有效。</div>';
   }
   var base=logs[0];
   var elapsed=Math.floor((todayMs-dnum(base.date))/86400000);
@@ -720,14 +745,13 @@ function selfTestHtml(logs){
   if(elapsed<7){
     return '<div class="cmp-empty"><b>好转自测 · 累积中</b><br>基线已记录（'+mdfmt(base.date)+'）。'
       +'康复<b>看周不看天</b>，锻炼满一周再看效果才准。<br>还差 <b>'+(7-elapsed)+' 天</b>到第一次对比 —— '
-      +'这几天照常打卡、按计划练就好。</div>'+selfTestGuide(false);
+      +'这几天照常打卡、按计划练就好。</div>';
   }
   var latest=logs[logs.length-1];
   // 满一周但还没复测（只有基线那一条）：提示今天复测
   if(latest.date===base.date){
     return '<div class="cmp-empty"><b>好转自测 · 该复测了 🔔</b><br>距基线（'+mdfmt(base.date)+'）已经 <b>'
-      +elapsed+' 天</b>，满一周了！照下面的图<b>重测一次</b>，量完填到「记录今天」，就能和基线对比看效果。</div>'
-      +selfTestGuide(true);
+      +elapsed+' 天</b>，满一周了！按下面「记录今天」<b>重测一次</b>（点开有量法图解），填完就能和基线对比看效果。</div>';
   }
   var span=Math.round((dnum(latest.date)-dnum(base.date))/86400000);
   var metrics=[
@@ -767,15 +791,44 @@ function selfTestHtml(logs){
   return '<div class="cmp"><h3>好转自测 · 对比锻炼前</h3>'
     +'<div class="cmp-sub">'+mdfmt(base.date)+' 基线 → '+mdfmt(latest.date)+'　锻炼 '+span+' 天</div>'
     +rows
-    +'<div class="cmp-verdict '+vcls+'">'+vtxt+'</div></div>'
-    +selfTestGuide(false);
+    +'<div class="cmp-verdict '+vcls+'">'+vtxt+'</div></div>';
 }
-function renderProgress(){
-  var logs=lsGet('srLog',[]);
-  var html='<h2 class="sec">好转自测</h2>'+selfTestHtml(logs)
-    +'<h2 class="sec">记录今天</h2>'
+function selfTestState(logs){
+  if(!logs.length) return 'none';
+  var base=logs[0];
+  var elapsed=Math.floor((dnum(todayISO())-dnum(base.date))/86400000);
+  if(elapsed<7) return 'accruing';
+  if(logs[logs.length-1].date===base.date) return 'due';
+  return 'compared';
+}
+// 历史记录（紧凑）：每行只显两个量化项，主观四项收进「展开详情」
+function historyRows(logs){
+  if(!logs.length) return '<div class="empty">还没有记录，点下面「记录今天」填一次。</div>';
+  var h='';
+  logs.slice().reverse().forEach(function(l,i){
+    var idx=logs.length-1-i;
+    var prim='';
+    if(l.apley!==''&&l.apley!=null) prim+='<span class="lstat">间距 <b>'+l.apley+'</b> cm</span>';
+    if(l.erdeg!==''&&l.erdeg!=null) prim+='<span class="lstat">外旋 <b>'+l.erdeg+'</b>°</span>';
+    if(!prim) prim='<span class="lstat" style="color:var(--ink3)">无量化项</span>';
+    var sec='';
+    if(l.pain!==''&&l.pain!=null) sec+='<span class="lstat">疼痛 <b>'+l.pain+'</b></span>';
+    if(l.serve!==''&&l.serve!=null) sec+='<span class="lstat">连续 <b>'+l.serve+'</b></span>';
+    if(l.rom) sec+='<span class="lstat">活动度 <b>'+l.rom+'</b></span>';
+    if(l.next!==''&&l.next!=null) sec+='<span class="lstat">次日 <b>'+l.next+'</b></span>';
+    h+='<div class="logrow2"><div class="lr-top"><span class="ld">'+l.date+'</span>'+prim
+      +'<button class="lr-del" data-del="'+idx+'">删除</button></div>'
+      +(sec?'<details class="lr-more"><summary>展开详情</summary><div class="lr-sec">'+sec+'</div></details>':'')
+      +'</div>';
+  });
+  return h;
+}
+// 记录今天：默认折叠；「该复测了」时自动展开。看图自测收进表单底部。
+function recordForm(open){
+  return '<details class="recform"'+(open?' open':'')+'>'
+    +'<summary class="recsum"><span class="rc-ic">＋</span> 记录今天的数据</summary>'
     +'<div class="form">'
-      +'<div class="qhint">📏 下面两项是<b>可量化测量</b>，每周固定一天、用同样姿势量，对比最准。</div>'
+      +'<div class="qhint">📏 前两项是<b>可量化测量</b>，每周固定一天、同样姿势量，对比最准。</div>'
       +'<div class="field"><label>背后手指间距 <span>Apley · 一手过肩 + 一手从下背后够，量指尖距离（cm），越小越好</span></label><input id="pApley" type="number" min="0" step="0.5" inputmode="decimal" placeholder="cm，约 10 → 目标 2–3"></div>'
       +'<div class="field"><label>肩外旋角度 <span>平躺、上臂外展 90° 肘屈 90°，前臂向后倒，量角度（°），越大越好</span></label><input id="pEr" type="number" min="0" max="180" inputmode="numeric" placeholder="°，&lt;70 受限 → 目标 &gt;90"></div>'
       +'<div class="field"><label>发球疼痛评分 <span>0 不疼 · 10 不敢发</span></label><input id="pPain" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
@@ -783,38 +836,16 @@ function renderProgress(){
       +'<div class="field"><label>肩关节活动度（墙天使）</label><select id="pRom"><option value="">选择…</option><option>做不到 / 离墙多</option><option>能贴墙一部分</option><option>大部分能贴墙</option><option>全程贴墙</option></select></div>'
       +'<div class="field"><label>第二天肩膀评分 <span>次日恢复，越低越好</span></label><input id="pNext" type="number" min="0" max="10" inputmode="numeric" placeholder="0–10"></div>'
       +'<button class="btn" id="saveLog">保存今天的记录</button>'
-    +'</div>';
+      +selfTestGuide(open)
+    +'</div></details>';
+}
+function renderProgress(){
+  var logs=lsGet('srLog',[]);
+  var due=selfTestState(logs)==='due';
+  var html='<h2 class="sec">好转自测</h2>'+selfTestHtml(logs);
 
-  html+='<h2 class="sec">历史记录</h2>';
-  if(!logs.length){
-    html+='<div class="empty">还没有记录，先填上面那张表。</div>';
-  }else{
-    logs.slice().reverse().forEach(function(l,i){
-      var idx=logs.length-1-i;
-      html+='<div class="logrow"><div class="ld">'+l.date+'</div>'
-        +(l.apley!==''&&l.apley!=null?'<div class="lstat">间距 <b>'+l.apley+'</b> cm</div>':'')
-        +(l.erdeg!==''&&l.erdeg!=null?'<div class="lstat">外旋 <b>'+l.erdeg+'</b>°</div>':'')
-        +(l.pain!==''&&l.pain!=null?'<div class="lstat">疼痛 <b>'+l.pain+'</b></div>':'')
-        +(l.serve!==''&&l.serve!=null?'<div class="lstat">连续 <b>'+l.serve+'</b></div>':'')
-        +(l.rom?'<div class="lstat">活动度 <b style="font-size:13px">'+l.rom+'</b></div>':'')
-        +(l.next!==''&&l.next!=null?'<div class="lstat">次日 <b>'+l.next+'</b></div>':'')
-        +'<button class="btn ghost" style="width:auto;padding:5px 12px;margin:0 0 0 auto;font-size:12px" data-del="'+idx+'">删除</button>'
-        +'</div>';
-    });
-  }
-
-  html+='<h2 class="sec">指标怎么看</h2>'
-    +ind('📏 背后手指间距（Apley）','可量化：一手过肩往下、一手从下背后往上够，量两手指尖距离。约 10cm <span class="ar">→</span> 第4周目标 2–3cm（甚至摸到）。左右各量、固定姿势。')
-    +ind('📐 肩外旋角度','可量化：平躺，上臂贴床外展 90°、肘屈 90°，前臂向后倒到底，量前臂与竖直方向的角度。<70° 受限 <span class="ar">→</span> 目标 >90°。')
-    +ind('① 疼痛评分','发球疼痛逐周下降：第1周 6/10 <span class="ar">→</span> 第4周 3/10 <span class="ar">→</span> 第8周 0–1/10。')
-    +ind('② 连续发球数','现在约 20 个就开始疼 <span class="ar">→</span> 目标 100 个不疼。')
-    +ind('③ 肩关节活动度','墙天使从「贴不上墙」 <span class="ar">→</span> 慢慢能全程贴墙。')
-    +ind('④ 次日恢复','最容易被忽略：今天发球、看明早肩膀评分。当天不疼但第二天疼 5 分 = 仍未恢复。');
-
-  html+='<div class="gird"><h3>建议加做的检查 · GIRD</h3>'
-    +'<p>找物理治疗师测 <b>GIRD</b>（盂肱关节内旋受限）——发球肩内旋角度是否下降。很多网球肩峰撞击的真正根源是：'
-    +'<span class="chain">肩后囊紧张 → 内旋受限 → 肱骨头前上移 → 肩峰撞击</span>。若 GIRD 明显，肩后囊松解和 Sleeper Stretch 的重要性甚至高于力量训练。</p></div>'
-    +'<div style="height:10px"></div>';
+  html+='<h2 class="sec">历史记录</h2>'+historyRows(logs)
+    +'<div style="height:6px"></div>'+recordForm(due)+'<div style="height:10px"></div>';
 
   document.getElementById('progress').innerHTML=html;
 
@@ -868,7 +899,19 @@ function renderPlan(){
       +'</ul><div class="serve">🎾 '+P.serve+'</div></div></div>';
   });
 
-  html+='<div class="startcard" style="margin-top:4px"><label>重新开始</label>'
+  html+='<h2 class="sec">指标怎么看</h2>'
+    +ind('📏 背后手指间距（Apley）','可量化：一手过肩往下、一手从下背后往上够，量两手指尖距离。约 10cm <span class="ar">→</span> 第4周目标 2–3cm（甚至摸到）。左右各量、固定姿势。')
+    +ind('📐 肩外旋角度','可量化：平躺，上臂贴床外展 90°、肘屈 90°，前臂向后倒到底，量前臂与竖直方向的角度。<70° 受限 <span class="ar">→</span> 目标 >90°。')
+    +ind('① 疼痛评分','发球疼痛逐周下降：第1周 6/10 <span class="ar">→</span> 第4周 3/10 <span class="ar">→</span> 第8周 0–1/10。')
+    +ind('② 连续发球数','现在约 20 个就开始疼 <span class="ar">→</span> 目标 100 个不疼。')
+    +ind('③ 肩关节活动度','墙天使从「贴不上墙」 <span class="ar">→</span> 慢慢能全程贴墙。')
+    +ind('④ 次日恢复','最容易被忽略：今天发球、看明早肩膀评分。当天不疼但第二天疼 5 分 = 仍未恢复。');
+
+  html+='<div class="gird"><h3>建议加做的检查 · GIRD</h3>'
+    +'<p>找物理治疗师测 <b>GIRD</b>（盂肱关节内旋受限）——发球肩内旋角度是否下降。很多网球肩峰撞击的真正根源是：'
+    +'<span class="chain">肩后囊紧张 → 内旋受限 → 肱骨头前上移 → 肩峰撞击</span>。若 GIRD 明显，肩后囊松解和 Sleeper Stretch 的重要性甚至高于力量训练。</p></div>';
+
+  html+='<div class="startcard" style="margin-top:14px"><label>重新开始</label>'
     +'<button class="btn ghost" id="resetBtn">清空打卡记录（连续天数 · 日历归零）</button>'
     +'<p>清空所有「今日打卡」记录，并把开始日期重置为今天。进度页的疼痛 / 发球记录不受影响。</p></div>';
 
